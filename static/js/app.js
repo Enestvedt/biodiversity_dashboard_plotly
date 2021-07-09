@@ -94,26 +94,28 @@ function createChart(id){
       }
       );
 
-
-      let indexes = [];
-
-      sampleVals.forEach(v => indexes.push(filteredSamples.sample_values.indexOf(v)));
-      console.log("indexes: ", indexes);
-
+      
+      // use the matchIndexes to gather corresponding data for the chart
       var otuIds = [];
       matchIndexes.forEach(i => otuIds.push(`OTU-ID ${filteredSamples.otu_ids[i]}`));
       console.log("otuIDs:  ", otuIds);
-      
-      var trace1 = {
+
+      var otuLabels = [];
+      matchIndexes.forEach(i=> otuLabels.push(filteredSamples.otu_labels[i]));
+      console.log("otuLabels: ",otuLabels);
+
+      // create the chart
+      var trace = {
         x: sampleVals.reverse(),
         y: otuIds.reverse(),
         name: "Top 10 OTUs",
         type: "bar",
-        orientation: "h"
+        orientation: "h",
+        text: otuLabels.reverse()
       }
 
       // data
-      var chartData = [trace1];
+      var chartData = [trace];
 
       // Apply the group bar mode to the layout
       var layout = {
