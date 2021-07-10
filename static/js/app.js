@@ -5,19 +5,18 @@ d3.json("/data/samples.json")
 
 // 
 function start(data){
-  // var sortedBySampleVal = data.sort((a, b) => b.samples.sample_values - a.samples.sample_values);
-  // console.log("sorted data:  ", sortedBySampleVal);
-  // // console.log(data);
     populateDropdown(data);
     createMetaData("940");
     createChart("940");
+    gaugeChart("940");
+    bubbleChart("940");
 }
 
 //get values drom data and create dropdown selector
 function populateDropdown(data) {
-  var dropElement = d3.select("#selDataset");
+  let dropElement = d3.select("#selDataset");
   data.names.forEach((dropVal) => {
-      var option = dropElement.append("option");
+      let option = dropElement.append("option");
       option.text(dropVal);
       option.attr("value", dropVal);
       }
@@ -30,22 +29,23 @@ function populateDropdown(data) {
 // the selected value to the function as the id parameter 
 // <select id="selDataset" onchange="optionChanged(this.value)"></select>
 function optionChanged(id){
-  console.log("option changed");
   createMetaData(id);
   createChart(id);
+  gaugeChart(id);
+  bubbleChart(id);
 }
+
 
 // get selected id from optionchanged function and 
 function createMetaData(id){
   d3.json("/data/samples.json")
     .then(function(data){
 
-      metadata = data.metadata;
-      person = metadata.filter(person => person.id === parseInt(id))[0];
-      console.log("person: ", person);
+      let metadata = data.metadata;
+      let person = metadata.filter(person => person.id === parseInt(id))[0];
 
       // add a div to the bootstrap panel - set text = to the key and value for the selected id
-      var metadataList = d3.select("#sample-metadata");
+      let metadataList = d3.select("#sample-metadata");
       metadataList.html(""); // this removes existing li tags/contents
       Object.entries(person).forEach(([key, value]) => {
         metadataList.append("div").attr("class", "panel-body").text(`${key}:   ${value}`)}
@@ -56,20 +56,19 @@ function createMetaData(id){
 
 
 function createChart(id){
-  console.log("creating chart");
   d3.json("/data/samples.json")
     .then(function(data){
 
       // get just the 'samples' array which is nested in 'data'
-      var samples = data.samples;
+      let samples = data.samples;
       // filter the samples so that we see just the object that has the id pass in as a parameter, the select the array from the object
-      var filteredSamples = samples.filter(sample => sample.id === id)[0];
+      let filteredSamples = samples.filter(sample => sample.id === id)[0];
 
       // sort the data from biggest to smallest and take the biggest 10
-      var sampleVals = filteredSamples.sample_values.sort((a,b) => b-a).slice(0,10);
+      let sampleVals = filteredSamples.sample_values.sort((a,b) => b-a).slice(0,10);
       
       // array to keep track of the indexes to match data after the sort
-      var matchIndexes = [];
+      let matchIndexes = [];
 
       // get the index where each sampleVal was found in the original data so we can get the matching data from other arrays
       // if the sample value shows up more than once, get the right index with a loop
@@ -87,7 +86,7 @@ function createChart(id){
           matchIndexes.push(my_index);
 
         } else if (matchIndexes.indexOf(my_index) == -1) { // these had more than 1 occurrence - check if they already were pushed
-          var dupsIndexes = indexesOf(val, filteredSamples);
+          let dupsIndexes = indexesOf(val, filteredSamples);
           dupsIndexes.forEach(x => matchIndexes.push(x)); //push all values if not there
         }
         //if they were already pushed, then do nothing
@@ -96,13 +95,11 @@ function createChart(id){
 
       
       // use the matchIndexes to gather corresponding data for the chart
-      var otuIds = [];
+      let otuIds = [];
       matchIndexes.forEach(i => otuIds.push(`OTU-ID ${filteredSamples.otu_ids[i]}`));
-      console.log("otuIDs:  ", otuIds);
 
-      var otuLabels = [];
+      let otuLabels = [];
       matchIndexes.forEach(i=> otuLabels.push(filteredSamples.otu_labels[i]));
-      console.log("otuLabels: ",otuLabels);
 
       // create the chart
       var trace = {
@@ -115,16 +112,105 @@ function createChart(id){
       }
 
       // data
-      var chartData = [trace];
+      let chartData = [trace];
 
       // Apply the group bar mode to the layout
-      var layout = {
-        title: "Top Ten OTUs",
+      let layout = {
+        title: "10 Most-Populous OTUs",
 
       }
 
       // Render the plot to the div tag with id "plot"
-      Plotly.newPlot("plot", chartData, layout);
+      Plotly.newPlot("bar", chartData, layout);
     }
     );
+}
+
+function bubbleChart(id){
+  
+  console.log("creating bubble chart");
+  d3.json("/data/samples.json")
+    .then(function(data){
+
+      // get just the 'samples' array which is nested in 'data'
+      let samples = data.samples;
+      // filter the samples so that we see just the object that has the id pass in as a parameter, the select the array from the object
+      let filteredSamples = samples.filter(sample => sample.id === id);
+      let xvals =filteredSamples.map(object=>object.otu_ids)[0];
+      let yvals =filteredSamples.map(object=>object.sample_values)[0];
+      let hoverText = filteredSamples.map(object=>object.otu_labels)[0];
+      
+      let trace1 = {
+        x: xvals,
+        y: yvals,
+        mode: 'markers',
+        text: hoverText,
+        marker: {
+          size: yvals.map(y=>y/1.5),
+          color: xvals
+        }
+      };
+      
+      let bubbleData = [trace1];
+      
+      let layout = {
+        title: 'OTUs in Sample',
+        showlegend: false,
+        height: 420,
+        width: 900,
+        xaxis: {
+          title: {
+            text: 'OTU ID',
+          },
+        },
+      };
+      
+      Plotly.newPlot('bubble', bubbleData, layout);
+
+    }
+  );
+}
+
+function gaugeChart(id){
+  console.log("creating gauge chart");
+  d3.json("/data/samples.json")
+    .then(function(data){
+
+      let metadata = data.metadata;
+      let person = metadata.filter(person => person.id === parseInt(id))[0];
+      let wfreq = person.wfreq;
+      
+      var gaugeData = [
+        {
+          domain: { x: [0, 1], y: [0, 1] },
+          value: wfreq,
+          title: { text: "Scrubs per Week" },
+          type: "indicator",
+          mode: "gauge+number",
+          gauge: {
+            axis: { range: [null, 9] },
+            steps: [
+              { range: [0, 1], color: 'rgba(255, 255, 255, 0)'},
+              { range: [1, 2], color: 'rgba(247, 245, 230, .5)'},
+              { range: [2, 3], color: 'rgba(240, 235, 212, .5)' },
+              { range: [3, 4], color: 'rgba(232, 226, 202, .5)'},
+              { range: [4, 5], color: 'rgba(210, 206, 145, .5)' },
+              { range: [5, 6], color: 'rgba(202, 209, 95, .5)' },
+              { range: [6, 7], color: 'rgba(170, 202, 42, .5)' },
+              { range: [7, 8], color: 'rgba(110, 154, 22, .5)' },
+              { range: [8, 9], color: 'rgba(14, 127, 0, .5)' }
+
+            ]
+
+          }
+        }
+      ];
+      
+
+
+      var layout = { width: 600, height: 500, margin: { t: 0, b: 0 } };
+      Plotly.newPlot('gauge', gaugeData, layout);      
+
+    }
+  );  
 }
