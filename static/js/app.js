@@ -3,7 +3,7 @@
 d3.json("/data/samples.json")
   .then(start);
 
-// 
+// "940" is the default id to load when the page loads - it is one of the selection options
 function start(data){
     populateDropdown(data);
     createMetaData("940");
@@ -12,7 +12,7 @@ function start(data){
     bubbleChart("940");
 }
 
-//get values drom data and create dropdown selector
+//get values drom data and create dropdown selector - this makes the selector dynamic - it data changes then page dropdown changes
 function populateDropdown(data) {
   let dropElement = d3.select("#selDataset");
   data.names.forEach((dropVal) => {
@@ -24,7 +24,7 @@ function populateDropdown(data) {
 };
 
 
-// handle changes in the id selector
+// handle selections in the id selector
 // the onchange event calls this function from the html and sends
 // the selected value to the function as the id parameter 
 // <select id="selDataset" onchange="optionChanged(this.value)"></select>
@@ -36,7 +36,7 @@ function optionChanged(id){
 }
 
 
-// get selected id from optionchanged function and 
+// get selected id from optionchanged function and populate the panel with information about that selection
 function createMetaData(id){
   d3.json("/data/samples.json")
     .then(function(data){
@@ -54,7 +54,7 @@ function createMetaData(id){
   );
 };
 
-
+//takes the user selected id and creates a horizontal barchart 
 function createChart(id){
   d3.json("/data/samples.json")
     .then(function(data){
@@ -126,6 +126,7 @@ function createChart(id){
     );
 }
 
+//create a bubble chart for all of the OTU's showing their counts on the X axis and their count as the size of the bubble.  This also takes the user selected id as the paramter.
 function bubbleChart(id){
   
   console.log("creating bubble chart");
@@ -171,6 +172,8 @@ function bubbleChart(id){
   );
 }
 
+
+//take the user selected id and create a guage chart showing the number of washes per week
 function gaugeChart(id){
   console.log("creating gauge chart");
   d3.json("/data/samples.json")
